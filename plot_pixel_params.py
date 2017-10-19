@@ -1,0 +1,105 @@
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import matplotlib.cm as cm
+import numpy as np
+
+
+sver = ['lbfgs', 'sgd','adam']
+av,HL,HLN,TP,TN,FP,FN,prec1,recall1 = np.loadtxt('params_' + sver[0] + '.txt').T
+av,HL,HLN,TP,TN,FP,FN,prec2,recall2 = np.loadtxt('params_' + sver[1] + '.txt').T
+av,HL,HLN,TP,TN,FP,FN,prec3,recall3 = np.loadtxt('params_' + sver[2] + '.txt').T
+
+fig= plt.figure(figsize=(6, 8))
+n=16
+nrows=4
+ncols=4
+max_val =0.0
+valy=[3,2,1,0]
+gs1 = gridspec.GridSpec(4, 3)
+gs1.update(wspace=0.0, hspace=0.0) # set the spacing between axes.
+        
+for i in np.array(range(4)):
+    
+    nstart =i*n
+    nfin =(i+1)*n
+    data_prec1 = prec1[nstart:nfin]
+    grid_prec1 = data_prec1.reshape((nrows,ncols))
+    data_prec2 = prec2[nstart:nfin]
+    grid_prec2 = data_prec2.reshape((nrows,ncols))
+    data_prec3 = prec3[nstart:nfin]
+    grid_prec3 = data_prec3.reshape((nrows,ncols))            
+
+    ax1 = plt.subplot(gs1[i*3])
+    ax2 = plt.subplot(gs1[i*3 +1])
+    ax3 = plt.subplot(gs1[i*3 +2])
+    [[row1,col1]] = np.argwhere(grid_prec1 == np.max(grid_prec1))
+    ym1 = valy[row1] 
+    xm1=col1  
+    [[row2,col2]] = np.argwhere(grid_prec2 == np.max(grid_prec2))
+    ym2 = valy[row2] 
+    xm2=col2
+    [[row3,col3]] = np.argwhere(grid_prec3 == np.max(grid_prec3))
+    ym3 = valy[row3] 
+    xm3=col3
+    
+    if (np.max(grid_prec1)>max_val):
+        max_val =np.max(grid_prec1) 
+        [[rowm,colm]] = np.argwhere(grid_prec1 == np.max(grid_prec1))
+        pmax = (i*3+1)
+    if (np.max(grid_prec2)>max_val):
+        max_val =np.max(grid_prec2)
+        [[rowm,colm]] = np.argwhere(grid_prec2 == np.max(grid_prec2))
+        pmax = (i*3+2)
+    if (np.max(grid_prec3)>max_val):
+        max_val =np.max(grid_prec3)
+        [[rowm,colm]] = np.argwhere(grid_prec3 == np.max(grid_prec3))
+        pmax = (i*3+3)
+    im1= ax1.imshow(grid_prec1,interpolation='nearest', cmap=cm.YlGnBu,vmin=0.0, vmax=1.0, extent =[0,4,0,4]) 
+    im2= ax2.imshow(grid_prec2,interpolation='nearest', cmap=cm.YlGnBu,vmin=0.0, vmax=1.0, extent =[0,4,0,4])
+    im3= ax3.imshow(grid_prec3,interpolation='nearest', cmap=cm.YlGnBu,vmin=0.0, vmax=1.0, extent =[0,4,0,4])  
+    ax1.plot(xm1+0.5,ym1+0.5,'k*')
+    ax2.plot(xm2+0.5,ym2+0.5,'k*')
+    ax3.plot(xm3+0.5,ym3+0.5,'k*')
+    plt.setp(ax1, yticks=[0.5,1.5, 2.5, 3.5], yticklabels=['4', '3', '2', '1'], ylabel='no. HL')
+    if (i==3):
+        plt.setp(ax1, xticks=[0.5, 1.5, 2.5, 3.5], xticklabels=['10', '20', '50', '100'], xlabel='no. HL nodes')    
+        plt.setp(ax2, xticks=[0.5, 1.5, 2.5, 3.5], xticklabels=['10', '20', '50', '100'], xlabel='no. HL nodes')
+        plt.setp(ax3, xticks=[0.5, 1.5, 2.5, 3.5], xticklabels=['10', '20', '50', '100'], xlabel='no. HL nodes')
+        ax2.set_yticks([])
+        ax3.set_yticks([])
+    else:
+        ax1.set_xticks([])
+        ax2.set_xticks([])
+        ax2.set_yticks([])
+        ax3.set_xticks([])
+        ax3.set_yticks([]) 
+
+ymax = valy[rowm] 
+xmax = colm    
+label=max_val
+plt.subplot(gs1[pmax-1])
+plt.plot(xmax+0.5,ymax+0.5,'o',markersize=15, color='red', mfc='none')
+plt.annotate(label, xy=(xmax+0.5, ymax+0.5), xytext=(xmax-20, ymax+20),
+        textcoords='offset points', ha='right', va='bottom',
+        bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
+        arrowprops=dict(arrowstyle = '->', connectionstyle='arc3,rad=0'))
+        
+plt.subplot(gs1[0]) 
+plt.annotate('alpha',color='blue', xy=(10, 540), xycoords='figure pixels')  
+plt.annotate('solver',color='red', xy=(205, 540), xycoords='figure pixels')
+plt.annotate('1e-1', color='blue', xy=(10, 505), xycoords='figure pixels') 
+plt.annotate('1e-2', color='blue', xy=(10, 392), xycoords='figure pixels') 
+plt.annotate('1e-3', color='blue', xy=(10, 275), xycoords='figure pixels') 
+plt.annotate('1e-4', color='blue', xy=(10, 160), xycoords='figure pixels') 
+plt.annotate(sver[0], color='red', xy=(100, 520), xycoords='figure pixels') 
+plt.annotate(sver[1], color='red', xy=(210, 520), xycoords='figure pixels') 
+plt.annotate(sver[2], color='red', xy=(320, 520), xycoords='figure pixels') 
+cax = fig.add_axes([0.9, 0.1, 0.03, 0.8])
+fig.colorbar(im3, cax=cax)
+pad = 5 
+                                                                                                                                 
+fig.savefig('param_all.pdf')
+
+
+
+
