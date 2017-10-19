@@ -63,7 +63,8 @@ print("score RF =%f\n"% scoreRF)
 print("score NN=%f\n"%scoreNN)
 xdat = rf.predict_proba(X_test)
 ydat = clf.predict_proba(X_test)
-'''
+
+'''quick test plot with subset of data
 xrange=xdat[0:10000,1]
 yrange=ydat[0:10000,1]
 yval=y_test[0:10000]
@@ -72,6 +73,7 @@ plt.ylabel('NN_results')
 plt.xlabel('RF_results')
 plt.title('True ELGs')
 plt.savefig('ELG.png')'''
+
 yones  = y_test[y_test==1]
 RFones = bRF[y_test==1]
 NNones = bNN[y_test==1]
@@ -106,6 +108,7 @@ Fones = yones==avone
 print(float(sum(Fones))/len(yones))
 
 '''
+#histograms of results for both random forest and NN methods
 plt.figure()
 mask_TP = np.zeros(len(y_test), bool) | ((y_test>0) & (bRF >0)) #valnn=0 TP
 mask_FN = np.zeros(len(y_test), bool) | ((y_test==0) & (bRF>0))   #valnn=1 FN
@@ -150,6 +153,9 @@ plt.ylabel("count")
 plt.title('NN scores') 
 plt.savefig('histNN.png')
 
+#tests to check which data points were classified the same by both methods 
+#shows contour plot of RF prediction[ith data] vs NN prediction[ith data]
+#for subset of data points
 
 import seaborn as sns
 sns.set(color_codes=True)
