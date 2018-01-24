@@ -109,16 +109,28 @@ print(float(sum(Fones))/len(yones))
 
 #plot ROC curve and compute AUC
 from sklearn import metrics
+import matplotlib.pyplot as plt
+
 probs = rf.predict_proba(X_test)
 fpr, tpr, _ = metrics.roc_curve(y_test, probs[:,1])
 auc = metrics.auc(fpr,tpr)
-import matplotlib.pyplot as plt
 plt.plot(fpr,tpr)
 plt.fill_between(fpr, 0, tpr,facecolor='powderblue')
 plt.xlabel('fpr')
 plt.ylabel('tpr')
 plt.title('ROC Curve for random forest w/AUC =%f' %auc)
 plt.savefig('ROC_RF.pdf')
+plt.close()
+
+b2_prob = clf.predict_proba(X_test)
+fpr, tpr, _ = metrics.roc_curve(y_test, b2_prob[:,1])
+auc = metrics.auc(fpr,tpr)
+plt.plot(fpr,tpr)
+plt.fill_between(fpr, 0, tpr,facecolor='powderblue')
+plt.xlabel('fpr')
+plt.ylabel('tpr')
+plt.title('ROC Curve for NN w/AUC =%f' %auc)
+plt.savefig('ROC_NN.pdf')
 
 '''
 #histograms of results for both random forest and NN methods
