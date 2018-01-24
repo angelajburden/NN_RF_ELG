@@ -8,7 +8,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import readin_HSC as rdHSC
-import importlib
+
 from sklearn import cross_validation,datasets,svm
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
@@ -17,12 +17,9 @@ from sklearn.tree import DecisionTreeClassifier
 
 
 # Setup parameters
-input_layer_size  = 11;
-hidden_layer_size = 10;
-it_no =50
 num_labels = 1;
-NbForest =500
-importlib.reload(rdHSC)
+
+reload(rdHSC)
 mag_flag =2
 # Load Training Data
 TA = rdHSC.sort_data(mag_flag)
@@ -32,107 +29,75 @@ TAall = np.array([TA['g_r'],TA['r_z'],TA['g_z'],TA['g_W1'],TA['r_W1'],
 TAall = TAall.transpose()
 X  = TAall[:,:-1]
 y  = TAall[:,-1:]
-
-rf = RandomForestClassifier(n_estimators=NbForest, min_samples_split=2, max_depth=15, max_leaf_nodes=2000)
-np.random.seed(0)
-rf.fit(X, y)
-clf = MLPClassifier(activation='logistic',solver='adam', alpha=1e-2, hidden_layer_sizes=(100, 2), verbose=True, random_state=1)
-clf.fit(X, y)
-
+# clf = MLPClassifier(activation='logistic',solver='adam', alpha=1e-2, hidden_layer_sizes=(100, 2), verbose=True, random_state=1)
+# clf.fit(X, y)
 print('\n Now test it\n')                                                                                    
-TD = rdHSC.sort_test_data(mag_flag)
-                      
+TD = rdHSC.sort_test_data(mag_flag)                      
 TDall = np.array([TD['g_r'],TD['r_z'],TD['g_z'],TD['g_W1'],TD['r_W1'],TD['z_W1'],TD['g_W2'],TD['r_W2'],TD['z_W2'],TD['W1_W2'],TD['r'], TD['y']])
-
 TestData = TDall.transpose() 
-print(TestData.shape)      
+# print(TestData.shape)      
 # print("udated\n")
 X_test = TestData[:,:-1]  
 y_test = TestData[:,-1]
-scoreRF=[]
-scoreNN=[] 
-bRF = rf.predict(X_test)
-bNN = clf.predict(X_test)
-# b = np.reshape(b, [len(b),1])
-cRF = y_test==bRF
-cNN = y_test==bNN
-scoreRF.append(float(sum(cRF))/len(bRF))
-scoreNN.append(float(sum(cNN))/len(bNN))
+np.random.seed(0)
+TP=[]
+TN=[]
+FP=[]
+FN=[]
+prec=[]
+recall=[]
+NF=[]
+MDepth=[]
+MLeaf=[]
+NbForests =[10, 20, 100, 500]
+max_depth = [10,15,50,100]
+max_ln =[100,1000]
 
-print("score RF =%f\n"% scoreRF)
-print("score NN=%f\n"%scoreNN)
-xdat = rf.predict_proba(X_test)
-ydat = clf.predict_proba(X_test)
+for NbForest in NbForests:
+    for md in max_depth:
+        for mln in max_ln:
+            print(mln,md,NbForest)
+            rf = RandomForestClassifier(n_estimators=NbForest, min_samples_split=2, max_depth=md, max_leaf_nodes=mln)       
+            rf.fit(X, y.ravel())
+            b = rf.predict(X_test)
+            yones  = y_test[y_test==1]
+            yzeros  = y_test[y_test==0]
+            NNones = b[y_test==1]
+            NNzeros = b[y_test==0]
 
-'''quick test plot with subset of data
-xrange=xdat[0:10000,1]
-yrange=ydat[0:10000,1]
-yval=y_test[0:10000]
-plt.plot(xrange[yval>0],yrange[yval>0],'ob')
-plt.ylabel('NN_results')
-plt.xlabel('RF_results')
-plt.title('True ELGs')
-plt.savefig('ELG.png')'''
+            cTP = yones==NNones
+            cTN = yzeros=NNzeros
+            cFP = sum(NNzeros)
+            cFN = len(NNones)-sum(NNones)
 
-yones  = y_test[y_test==1]
-RFones = bRF[y_test==1]
-NNones = bNN[y_test==1]
-
-cRFones = yones==RFones
-cNNones = yones==NNones
-scoreTrueNN = (float(sum(cNNones))/len(NNones))
-scoreTrueRF = (float(sum(cRFones))/len(RFones))
-
-print(scoreTrueRF, scoreTrueNN)
-
-yzs  = y_test[y_test==0]
-RFwrong = bRF[y_test==0]
-NNwrong = bNN[y_test==0]
-
-cRFzs = yzs!=RFwrong
-cNNzs = yzs!=NNwrong
-scoreFNN = (float(sum(cNNzs))/len(NNwrong))
-scoreFRF = (float(sum(cRFzs))/len(RFwrong))
-
-print(scoreFRF, scoreFNN)
-
-avdat = xdat[:,1]+ydat[:,1]
-avdat = avdat/2
-avdat[avdat>0.5]=1
-avdat[avdat<0.5]=0
-cav= y_test==avdat
-scav=float(sum(cav))/len(avdat)
-print(scav)
-avone=avdat[y_test==1]
-Fones = yones==avone
-print(float(sum(Fones))/len(yones))
+            TP.append(sum(cTP))
+            TN.append(sum(cTN))
+            FP.append(cFP)
+            FN.append(cFN)
+            prec.append(float(sum(cTP))/float(sum(cTP)+ cFP))
+            recall.append(float(sum(cTP))/float(sum(cTP)+ cFN))
+            NF.append(NbForest)
+            MDepth.append(md)
+            MLeaf.append(mln)
+            
+fileout = 'params_RF_new.txt'
+np.savetxt(fileout, np.c_[NF,MDepth,MLeaf,TP,TN,FP,FN,prec,recall],fmt='%1.4f')
 
 #plot ROC curve and compute AUC
 from sklearn import metrics
-import matplotlib.pyplot as plt
-
 probs = rf.predict_proba(X_test)
 fpr, tpr, _ = metrics.roc_curve(y_test, probs[:,1])
-auc = metrics.auc(fpr,tpr)
+import matplotlib.pyplot as plt
 plt.plot(fpr,tpr)
 plt.fill_between(fpr, 0, tpr,facecolor='powderblue')
 plt.xlabel('fpr')
 plt.ylabel('tpr')
-plt.title('ROC Curve for random forest w/AUC =%f' %auc)
+plt.title('ROC Curve for random forest w/AUC =0.89')
 plt.savefig('ROC_RF.pdf')
-plt.close()
-
-b2_prob = clf.predict_proba(X_test)
-fpr, tpr, _ = metrics.roc_curve(y_test, b2_prob[:,1])
 auc = metrics.auc(fpr,tpr)
-plt.plot(fpr,tpr)
-plt.fill_between(fpr, 0, tpr,facecolor='powderblue')
-plt.xlabel('fpr')
-plt.ylabel('tpr')
-plt.title('ROC Curve for NN w/AUC =%f' %auc)
-plt.savefig('ROC_NN.pdf')
-
 '''
+# xdat = rf.predict_proba(X_test)
+# ydat = clf.predict_proba(X_test)
 #histograms of results for both random forest and NN methods
 plt.figure()
 mask_TP = np.zeros(len(y_test), bool) | ((y_test>0) & (bRF >0)) #valnn=0 TP
@@ -195,3 +160,12 @@ f.tight_layout()
 f.savefig("contour.png")
 
 '''
+'''quick test plot with subset of data
+xrange=xdat[0:10000,1]
+yrange=ydat[0:10000,1]
+yval=y_test[0:10000]
+plt.plot(xrange[yval>0],yrange[yval>0],'ob')
+plt.ylabel('NN_results')
+plt.xlabel('RF_results')
+plt.title('True ELGs')
+plt.savefig('ELG.png')'''
