@@ -107,6 +107,19 @@ avone=avdat[y_test==1]
 Fones = yones==avone
 print(float(sum(Fones))/len(yones))
 
+#plot ROC curve and compute AUC
+from sklearn import metrics
+probs = rf.predict_proba(X_test)
+fpr, tpr, _ = metrics.roc_curve(y_test, probs[:,1])
+auc = metrics.auc(fpr,tpr)
+import matplotlib.pyplot as plt
+plt.plot(fpr,tpr)
+plt.fill_between(fpr, 0, tpr,facecolor='powderblue')
+plt.xlabel('fpr')
+plt.ylabel('tpr')
+plt.title('ROC Curve for random forest w/AUC =%f' %auc)
+plt.savefig('ROC_RF.pdf')
+
 '''
 #histograms of results for both random forest and NN methods
 plt.figure()
